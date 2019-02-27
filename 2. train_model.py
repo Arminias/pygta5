@@ -7,20 +7,21 @@ import pandas as pd
 from tqdm import tqdm
 from collections import deque
 from models import inception_v3 as googlenet
+from keras.layers import Conv2D, MaxPooling2D, AveragePooling2D, Conv3D, MaxPooling3D, AveragePooling3D, Dropout, Dense, Concatenate
 from random import shuffle
+from keras.models import Model
 
-
-FILE_I_END = 1860
+FILE_I_END = 1
 
 WIDTH = 480
 HEIGHT = 270
 LR = 1e-3
 EPOCHS = 30
 
-MODEL_NAME = ''
+MODEL_NAME = 'a'
 PREV_MODEL = ''
 
-LOAD_MODEL = True
+LOAD_MODEL = False
 
 wl = 0
 sl = 0
@@ -43,12 +44,17 @@ sa = [0,0,0,0,0,0,1,0,0]
 sd = [0,0,0,0,0,0,0,1,0]
 nk = [0,0,0,0,0,0,0,0,1]
 
-model = googlenet(WIDTH, HEIGHT, 3, LR, output=9, model_name=MODEL_NAME)
-
+base_model = googlenet(WIDTH, HEIGHT, 3, LR, output=9, model_name=MODEL_NAME)
+# add a global spatial average pooling layer
+x = base_model.output
+# and a logistic layer -- let's say we have 200 classes
+predictions = Dense(9, activation='softmax')(x)
+model = Model(inputs=base_model.input, outputs=predictions)
 if LOAD_MODEL:
-    model.load(PREV_MODEL)
+    model.load_weights(PREV_MODEL)
     print('We have loaded a previous model!!!!')
-    
+
+model.compile(optimizer='Adam', loss='categorical_crossentropy')
 
 # iterates through the training files
 
@@ -59,8 +65,8 @@ for e in range(EPOCHS):
     shuffle(data_order)
     for count,i in enumerate(data_order):
         
-        try:
-            file_name = 'J:/phase10-random-padded/training_data-{}.npy'.format(i)
+        #try:
+            file_name = 'training_data-{}.npy'.format(i)
             # full file info
             train_data = np.load(file_name)
             print('training_data-{}.npy'.format(i),len(train_data))
@@ -86,21 +92,20 @@ for e in range(EPOCHS):
             test = train_data[-50:]
 
             X = np.array([i[0] for i in train]).reshape(-1,WIDTH,HEIGHT,3)
-            Y = [i[1] for i in train]
+            Y = np.array([i[1] for i in train])#.resize(1, 2048)
 
             test_x = np.array([i[0] for i in test]).reshape(-1,WIDTH,HEIGHT,3)
             test_y = [i[1] for i in test]
 
-            model.fit({'input': X}, {'targets': Y}, n_epoch=1, validation_set=({'input': test_x}, {'targets': test_y}), 
-                snapshot_step=2500, show_metric=True, run_id=MODEL_NAME)
+            model.fit(X, Y, epochs=1)#, validation_data=({'input': test_x}, {'targets': test_y}))
 
 
             if count%10 == 0:
                 print('SAVING MODEL!')
                 model.save(MODEL_NAME)
                     
-        except Exception as e:
-            print(str(e))
+        #except Exception as e:
+           # print(str(e))
             
     
 

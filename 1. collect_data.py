@@ -1,5 +1,5 @@
 import numpy as np
-from grabscreen import grab_screen
+from grabscreen import grab_screen, captureImage
 import cv2
 import time
 from getkeys import key_check
@@ -72,7 +72,7 @@ def main(file_name, starting_value):
     while(True):
         
         if not paused:
-            screen = grab_screen(region=(0,40,1920,1120))
+            screen = captureImage(region=(0,40,1920,1120))
             last_time = time.time()
             # resize to something a bit more acceptable for a CNN
             screen = cv2.resize(screen, (480,270))
@@ -85,9 +85,9 @@ def main(file_name, starting_value):
 
             #print('loop took {} seconds'.format(time.time()-last_time))
             last_time = time.time()
-##            cv2.imshow('window',cv2.resize(screen,(640,360)))
+            #cv2.imshow('window',screen)
 ##            if cv2.waitKey(25) & 0xFF == ord('q'):
-##                cv2.destroyAllWindows()
+##               cv2.destroyAllWindows()
 ##                break
 
             if len(training_data) % 100 == 0:

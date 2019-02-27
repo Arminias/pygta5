@@ -3,6 +3,14 @@
 import cv2
 import numpy as np
 import win32gui, win32ui, win32con, win32api
+import mss
+import time
+
+def captureImage(region = None):
+    with mss.mss() as sct:
+        screen = sct.grab(region)
+        screen = np.array(screen)
+        return cv2.cvtColor(screen, cv2.COLOR_BGRA2RGB)
 
 def grab_screen(region=None):
 
@@ -29,10 +37,9 @@ def grab_screen(region=None):
     signedIntsArray = bmp.GetBitmapBits(True)
     img = np.fromstring(signedIntsArray, dtype='uint8')
     img.shape = (height,width,4)
-
     srcdc.DeleteDC()
     memdc.DeleteDC()
     win32gui.ReleaseDC(hwin, hwindc)
     win32gui.DeleteObject(bmp.GetHandle())
-
-    return cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
+    img = cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
+    return img
