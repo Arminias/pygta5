@@ -10,11 +10,13 @@ import random
 from statistics import mode,mean
 import numpy as np
 from motion import motion_detection
+from keras.layers import Dense
+from keras.models import Model
 
-GAME_WIDTH = 1920
-GAME_HEIGHT = 1080
+GAME_WIDTH = 800
+GAME_HEIGHT = 450
 
-how_far_remove = 800
+how_far_remove = 0
 rs = (20,15)
 log_len = 25
 
@@ -113,9 +115,14 @@ def no_keys():
     
 
 
-model = googlenet(WIDTH, HEIGHT, 3, LR, output=9)
-MODEL_NAME = ''
-model.load(MODEL_NAME)
+base_model = googlenet(WIDTH, HEIGHT, 3, LR, output=9)
+# add a global spatial average pooling layer
+x = base_model.output
+# and a logistic layer -- let's say we have 200 classes
+predictions = Dense(9, activation='softmax')(x)
+model = Model(inputs=base_model.input, outputs=predictions)
+MODEL_NAME = 'a'
+model.load_weights(MODEL_NAME)
 
 print('We have loaded a previous model!!!!')
 
@@ -128,7 +135,7 @@ def main():
     paused = False
     mode_choice = 0
 
-    screen = grab_screen(region=(0,40,GAME_WIDTH,GAME_HEIGHT+40))
+    screen = grab_screen(region=(0,0,GAME_WIDTH,GAME_HEIGHT))
     screen = cv2.cvtColor(screen, cv2.COLOR_BGR2RGB)
     prev = cv2.resize(screen, (WIDTH,HEIGHT))
 
@@ -139,20 +146,20 @@ def main():
     while(True):
         
         if not paused:
-            screen = grab_screen(region=(0,40,GAME_WIDTH,GAME_HEIGHT+40))
+            screen = grab_screen(region=(0,0,GAME_WIDTH,GAME_HEIGHT))
             screen = cv2.cvtColor(screen, cv2.COLOR_BGR2RGB)
 
             last_time = time.time()
             screen = cv2.resize(screen, (WIDTH,HEIGHT))
 
-            delta_count_last = motion_detection(t_minus, t_now, t_plus)
+            delta_count_last = motion_detection(t_minus, t_now, t_plus, screen)
 
             t_minus = t_now
             t_now = t_plus
             t_plus = screen
             t_plus = cv2.blur(t_plus,(4,4))
 
-            prediction = model.predict([screen.reshape(WIDTH,HEIGHT,3)])[0]
+            prediction = model.predict([screen.reshape(-1,WIDTH,HEIGHT,3)])[0]
             prediction = np.array(prediction) * np.array([4.5, 0.1, 0.1, 0.1,  1.8,   1.8, 0.5, 0.5, 0.2])
 
             mode_choice = np.argmax(prediction)
@@ -187,7 +194,7 @@ def main():
                 no_keys()
                 choice_picked = 'nokeys'
 
-            motion_log.append(delta_count)
+            motion_log.append(delta_count_last)
             motion_avg = round(mean(motion_log),3)
             print('loop took {} seconds. Motion: {}. Choice: {}'.format( round(time.time()-last_time, 3) , motion_avg, choice_picked))
             

@@ -11,7 +11,7 @@ from keras.layers import Conv2D, MaxPooling2D, AveragePooling2D, Conv3D, MaxPool
 from random import shuffle
 from keras.models import Model
 
-FILE_I_END = 1
+FILE_I_END = 55
 
 WIDTH = 480
 HEIGHT = 270
@@ -19,9 +19,9 @@ LR = 1e-3
 EPOCHS = 30
 
 MODEL_NAME = 'a'
-PREV_MODEL = ''
+PREV_MODEL = 'a'
 
-LOAD_MODEL = False
+LOAD_MODEL = True
 
 wl = 0
 sl = 0
@@ -87,17 +87,17 @@ for e in range(EPOCHS):
 
             # #
             # always validating unique data: 
-            #shuffle(train_data)
-            train = train_data[:-50]
-            test = train_data[-50:]
+            shuffle(train_data)
+            train = train_data
+            #test = train_data[-50:]
 
             X = np.array([i[0] for i in train]).reshape(-1,WIDTH,HEIGHT,3)
             Y = np.array([i[1] for i in train])#.resize(1, 2048)
 
-            test_x = np.array([i[0] for i in test]).reshape(-1,WIDTH,HEIGHT,3)
-            test_y = [i[1] for i in test]
+            #test_x = np.array([i[0] for i in test]).reshape(-1,WIDTH,HEIGHT,3)
+            #test_y = [i[1] for i in test]
 
-            model.fit(X, Y, epochs=1)#, validation_data=({'input': test_x}, {'targets': test_y}))
+            model.fit(X, Y, epochs=2, batch_size=3, validation_split=0.1)#, validation_data=({'input': test_x}, {'targets': test_y}))
 
 
             if count%10 == 0:

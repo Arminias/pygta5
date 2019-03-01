@@ -10,7 +10,7 @@ def captureImage(region = None):
     with mss.mss() as sct:
         screen = sct.grab(region)
         screen = np.array(screen)
-        return cv2.cvtColor(screen, cv2.COLOR_BGRA2RGB)
+        return cv2.cvtColor(screen, cv2.COLOR_BGR2RGB)
 
 def grab_screen(region=None):
 

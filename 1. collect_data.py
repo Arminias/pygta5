@@ -1,9 +1,12 @@
 import numpy as np
-from grabscreen import grab_screen, captureImage
 import cv2
 import time
+from desktopmagic.screengrab_win32 import getRectAsImage
 from getkeys import key_check
 import os
+import mss
+from ThreadWorker import ThreadWorker
+
 
 w = [1,0,0,0,0,0,0,0,0]
 s = [0,1,0,0,0,0,0,0,0]
@@ -15,19 +18,13 @@ sa = [0,0,0,0,0,0,1,0,0]
 sd = [0,0,0,0,0,0,0,1,0]
 nk = [0,0,0,0,0,0,0,0,1]
 
-starting_value = 1
 
-while True:
-    file_name = 'training_data-{}.npy'.format(starting_value)
 
-    if os.path.isfile(file_name):
-        print('File exists, moving along',starting_value)
-        starting_value += 1
-    else:
-        print('File does not exist, starting fresh!',starting_value)
-        
-        break
 
+def captureImage(bbox = None):
+    with mss.mss() as sct:
+        return sct.grab(bbox)
+    #return getRectAsImage(bbox)
 
 def keys_to_output(keys):
     '''
@@ -58,9 +55,18 @@ def keys_to_output(keys):
     return output
 
 
+
+def convertOpenCV(rawImg):
+    img_np = np.array(rawImg)
+    #img = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
+    #del img_np
+    del rawImg
+    return img_np
+
+
 def main(file_name, starting_value):
-    file_name = file_name
-    starting_value = starting_value
+    worker = ThreadWorker(starting_value, file_name)
+    worker.startThread()
     training_data = []
     for i in list(range(4))[::-1]:
         print(i+1)
@@ -69,36 +75,26 @@ def main(file_name, starting_value):
     last_time = time.time()
     paused = False
     print('STARTING!!!')
+    cv2.namedWindow('Screen', cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO | cv2.WINDOW_GUI_EXPANDED)
     while(True):
         
         if not paused:
-            screen = captureImage(region=(0,40,1920,1120))
-            last_time = time.time()
+            screen = captureImage((0,0,800,450))
+            screen = convertOpenCV(screen)
+            
             # resize to something a bit more acceptable for a CNN
             screen = cv2.resize(screen, (480,270))
             # run a color convert:
-            screen = cv2.cvtColor(screen, cv2.COLOR_BGR2RGB)
+            screen = cv2.cvtColor(screen, cv2.COLOR_RGBA2RGB)
             
             keys = key_check()
             output = keys_to_output(keys)
-            training_data.append([screen,output])
-
+            if not (worker.appendData(screen, output)):
+                break
+            
             #print('loop took {} seconds'.format(time.time()-last_time))
-            last_time = time.time()
-            #cv2.imshow('window',screen)
-##            if cv2.waitKey(25) & 0xFF == ord('q'):
-##               cv2.destroyAllWindows()
-##                break
-
-            if len(training_data) % 100 == 0:
-                print(len(training_data))
-                
-                if len(training_data) == 500:
-                    np.save(file_name,training_data)
-                    print('SAVED')
-                    training_data = []
-                    starting_value += 1
-                    file_name = 'X:/pygta5/phase7-larger-color/training_data-{}.npy'.format(starting_value)
+            cv2.imshow('Screen',screen)
+            cv2.waitKey(1)
 
                     
         keys = key_check()
@@ -112,5 +108,16 @@ def main(file_name, starting_value):
                 paused = True
                 time.sleep(1)
 
+if __name__ == "__main__":
+    starting_value = 1
+    while True:
+        file_name = 'training_data-{}.npy'.format(starting_value)
 
-main(file_name, starting_value)
+        if os.path.isfile(file_name):
+            print('File exists, moving along',starting_value)
+            starting_value += 1
+        else:
+            print('File does not exist, starting fresh!',starting_value)
+            
+            break
+    main(file_name, starting_value)
