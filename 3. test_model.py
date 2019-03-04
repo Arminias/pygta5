@@ -2,7 +2,7 @@ import numpy as np
 from grabscreen import grab_screen
 import cv2
 import time
-from directkeys import PressKey,ReleaseKey, W, A, S, D
+from directkeys import PressKey,ReleaseKey, W, A, S, D, Del
 from models import inception_v3 as googlenet
 from getkeys import key_check
 from collections import deque, Counter
@@ -20,7 +20,7 @@ how_far_remove = 0
 rs = (20,15)
 log_len = 25
 
-motion_req = 800
+motion_req = 2500
 motion_log = deque(maxlen=log_len)
 
 WIDTH = 480
@@ -102,6 +102,10 @@ def reverse_right():
     PressKey(D)
     ReleaseKey(W)
     ReleaseKey(A)
+	
+def restart():
+    PressKey(Del)
+    ReleaseKey(Del)
 
 def no_keys():
 
@@ -121,7 +125,7 @@ x = base_model.output
 # and a logistic layer -- let's say we have 200 classes
 predictions = Dense(9, activation='softmax')(x)
 model = Model(inputs=base_model.input, outputs=predictions)
-MODEL_NAME = 'a'
+MODEL_NAME = 'b'
 model.load_weights(MODEL_NAME)
 
 print('We have loaded a previous model!!!!')
@@ -160,7 +164,7 @@ def main():
             t_plus = cv2.blur(t_plus,(4,4))
 
             prediction = model.predict([screen.reshape(-1,WIDTH,HEIGHT,3)])[0]
-            prediction = np.array(prediction) * np.array([4.5, 0.1, 0.1, 0.1,  1.8,   1.8, 0.5, 0.5, 0.2])
+            #prediction = np.array(prediction) * np.array([1.33, 0.75, 1, 1, 1.25, 1.25, 0.75, 0.75, 1])
 
             mode_choice = np.argmax(prediction)
 
@@ -206,7 +210,7 @@ def main():
                 # 2 = reverse left, turn right out
                 # 3 = reverse right, turn left out
 
-                quick_choice = random.randrange(0,4)
+                quick_choice = random.randrange(0,7)
                 
                 if quick_choice == 0:
                     reverse()
@@ -231,7 +235,10 @@ def main():
                     time.sleep(random.uniform(1,2))
                     forward_left()
                     time.sleep(random.uniform(1,2))
-
+					
+                elif quick_choice == 6:
+                    restart()
+					
                 for i in range(log_len-2):
                     del motion_log[0]
     

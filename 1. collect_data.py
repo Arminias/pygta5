@@ -98,7 +98,7 @@ def main(file_name, starting_value):
 
                     
         keys = key_check()
-        if 'T' in keys:
+        if 'R' in keys:
             if paused:
                 paused = False
                 print('unpaused!')

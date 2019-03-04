@@ -6,8 +6,8 @@ import os
 
 class ThreadWorker:
     def __init__(self, starting_value, file_name):
-        self.screenQueue = Queue(500)
-        self.keyQueue = Queue(500)
+        self.screenQueue = Queue(200)
+        self.keyQueue = Queue(200)
         self.running = Value('d', True)
         self.thread = Process(target=self.worker)
         self.starting_value = starting_value
@@ -41,6 +41,7 @@ class ThreadWorker:
         try:
             self.screenQueue.put(screen, True, 10)
             self.keyQueue.put(keys, True, 10)
+            print('Put!')
         except Exception:
             return False
         return True

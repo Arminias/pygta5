@@ -11,17 +11,18 @@ from keras.layers import Conv2D, MaxPooling2D, AveragePooling2D, Conv3D, MaxPool
 from random import shuffle
 from keras.models import Model
 
-FILE_I_END = 55
+FILE_I_START = 95
+FILE_I_END = 108
 
 WIDTH = 480
 HEIGHT = 270
 LR = 1e-3
-EPOCHS = 30
+EPOCHS = 1 #EIN DURCHLAUF
 
-MODEL_NAME = 'a'
-PREV_MODEL = 'a'
+MODEL_NAME = 'b'
+PREV_MODEL = 'b'
 
-LOAD_MODEL = True
+LOAD_MODEL = False
 
 wl = 0
 sl = 0
@@ -61,7 +62,7 @@ model.compile(optimizer='Adam', loss='categorical_crossentropy')
 
 for e in range(EPOCHS):
     #data_order = [i for i in range(1,FILE_I_END+1)]
-    data_order = [i for i in range(1,FILE_I_END+1)]
+    data_order = [i for i in range(FILE_I_START,FILE_I_END+1)]
     shuffle(data_order)
     for count,i in enumerate(data_order):
         
@@ -97,13 +98,13 @@ for e in range(EPOCHS):
             #test_x = np.array([i[0] for i in test]).reshape(-1,WIDTH,HEIGHT,3)
             #test_y = [i[1] for i in test]
 
-            model.fit(X, Y, epochs=2, batch_size=3, validation_split=0.1)#, validation_data=({'input': test_x}, {'targets': test_y}))
+            model.fit(X, Y, epochs=2, batch_size=3, validation_split=0.05)#, validation_data=({'input': test_x}, {'targets': test_y}))
 
 
             if count%10 == 0:
                 print('SAVING MODEL!')
                 model.save(MODEL_NAME)
-                    
+model.save(MODEL_NAME)	 
         #except Exception as e:
            # print(str(e))
             
