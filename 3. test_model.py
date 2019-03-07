@@ -1,5 +1,5 @@
 import numpy as np
-from grabscreen import grab_screen
+from grabscreen import grab_screen, captureImage
 import cv2
 import time
 from directkeys import PressKey,ReleaseKey, W, A, S, D, Del
@@ -13,8 +13,8 @@ from motion import motion_detection
 from keras.layers import Dense
 from keras.models import Model
 
-GAME_WIDTH = 800
-GAME_HEIGHT = 450
+GAME_WIDTH = 1024
+GAME_HEIGHT = 576
 
 how_far_remove = 0
 rs = (20,15)
@@ -51,7 +51,7 @@ def straight():
     ReleaseKey(S)
 
 def left():
-    if random.randrange(0,3) == 1:
+    if random.randrange(0,8) == 4:
         PressKey(W)
     else:
         ReleaseKey(W)
@@ -61,7 +61,7 @@ def left():
     #ReleaseKey(S)
 
 def right():
-    if random.randrange(0,3) == 1:
+    if random.randrange(0,8) == 4:
         PressKey(W)
     else:
         ReleaseKey(W)
@@ -109,7 +109,7 @@ def restart():
 
 def no_keys():
 
-    if random.randrange(0,3) == 1:
+    if random.randrange(0,10) == 4:
         PressKey(W)
     else:
         ReleaseKey(W)
@@ -139,8 +139,9 @@ def main():
     paused = False
     mode_choice = 0
 
-    screen = grab_screen(region=(0,0,GAME_WIDTH,GAME_HEIGHT))
-    screen = cv2.cvtColor(screen, cv2.COLOR_BGR2RGB)
+    screen = captureImage((0,0,GAME_WIDTH,GAME_HEIGHT))
+    screen = np.array(screen)
+    screen = cv2.cvtColor(screen, cv2.COLOR_RGBA2RGB)
     prev = cv2.resize(screen, (WIDTH,HEIGHT))
 
     t_minus = prev
@@ -150,8 +151,9 @@ def main():
     while(True):
         
         if not paused:
-            screen = grab_screen(region=(0,0,GAME_WIDTH,GAME_HEIGHT))
-            screen = cv2.cvtColor(screen, cv2.COLOR_BGR2RGB)
+            screen = captureImage((0,0,GAME_WIDTH,GAME_HEIGHT))
+            screen = np.array(screen)
+            screen = cv2.cvtColor(screen, cv2.COLOR_RGBA2RGB)
 
             last_time = time.time()
             screen = cv2.resize(screen, (WIDTH,HEIGHT))
@@ -164,7 +166,7 @@ def main():
             t_plus = cv2.blur(t_plus,(4,4))
 
             prediction = model.predict([screen.reshape(-1,WIDTH,HEIGHT,3)])[0]
-            #prediction = np.array(prediction) * np.array([1.33, 0.75, 1, 1, 1.25, 1.25, 0.75, 0.75, 1])
+            prediction = np.array(prediction) * np.array([1.1, 1.00, 0.80, 0.80, 1.00, 1.00, 1.00, 1.0, 1])
 
             mode_choice = np.argmax(prediction)
 
@@ -236,7 +238,7 @@ def main():
                     forward_left()
                     time.sleep(random.uniform(1,2))
 					
-                elif quick_choice == 6:
+                elif quick_choice == 8:
                     restart()
 					
                 for i in range(log_len-2):
@@ -245,7 +247,7 @@ def main():
         keys = key_check()
 
         # p pauses game and can get annoying.
-        if 'T' in keys:
+        if 'R' in keys:
             if paused:
                 paused = False
                 time.sleep(1)

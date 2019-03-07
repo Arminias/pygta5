@@ -79,15 +79,14 @@ def main(file_name, starting_value):
     while(True):
         
         if not paused:
-            screen = captureImage((0,0,800,450))
+            screen = captureImage((0,0,1024,576))
+            keys = key_check()
             screen = convertOpenCV(screen)
             
             # resize to something a bit more acceptable for a CNN
-            screen = cv2.resize(screen, (480,270))
+            screen = cv2.resize(screen, (480,270), interpolation=4)
             # run a color convert:
             screen = cv2.cvtColor(screen, cv2.COLOR_RGBA2RGB)
-            
-            keys = key_check()
             output = keys_to_output(keys)
             if not (worker.appendData(screen, output)):
                 break

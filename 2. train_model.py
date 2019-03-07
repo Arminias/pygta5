@@ -10,19 +10,24 @@ from models import inception_v3 as googlenet
 from keras.layers import Conv2D, MaxPooling2D, AveragePooling2D, Conv3D, MaxPooling3D, AveragePooling3D, Dropout, Dense, Concatenate
 from random import shuffle
 from keras.models import Model
+from keras import backend as K
+import matplotlib.pyplot as plt
+from getkeys import key_check
+import time
 
-FILE_I_START = 95
-FILE_I_END = 108
+K.set_floatx('float32')
+FILE_I_START = 1
+FILE_I_END = 19
 
 WIDTH = 480
 HEIGHT = 270
 LR = 1e-3
-EPOCHS = 1 #EIN DURCHLAUF
+EPOCHS = 5 #EIN DURCHLAUF
 
 MODEL_NAME = 'b'
 PREV_MODEL = 'b'
 
-LOAD_MODEL = False
+LOAD_MODEL = True
 
 wl = 0
 sl = 0
@@ -45,6 +50,14 @@ sa = [0,0,0,0,0,0,1,0,0]
 sd = [0,0,0,0,0,0,0,1,0]
 nk = [0,0,0,0,0,0,0,0,1]
 
+class LossHistory(keras.callbacks.Callback):
+    def on_train_begin(self, logs={}):
+        self.losses = []
+
+    def on_batch_end(self, batch, logs={}):
+        self.losses.append(logs.get('loss'))
+history = LossHistory()
+
 base_model = googlenet(WIDTH, HEIGHT, 3, LR, output=9, model_name=MODEL_NAME)
 # add a global spatial average pooling layer
 x = base_model.output
@@ -55,18 +68,20 @@ if LOAD_MODEL:
     model.load_weights(PREV_MODEL)
     print('We have loaded a previous model!!!!')
 
-model.compile(optimizer='Adam', loss='categorical_crossentropy')
+model.compile(optimizer='Nadam', loss='categorical_crossentropy')
 
 # iterates through the training files
 
-
+stop = False
 for e in range(EPOCHS):
     #data_order = [i for i in range(1,FILE_I_END+1)]
+    
     data_order = [i for i in range(FILE_I_START,FILE_I_END+1)]
     shuffle(data_order)
     for count,i in enumerate(data_order):
         
         #try:
+        if not stop:
             file_name = 'training_data-{}.npy'.format(i)
             # full file info
             train_data = np.load(file_name)
@@ -98,13 +113,25 @@ for e in range(EPOCHS):
             #test_x = np.array([i[0] for i in test]).reshape(-1,WIDTH,HEIGHT,3)
             #test_y = [i[1] for i in test]
 
-            model.fit(X, Y, epochs=2, batch_size=3, validation_split=0.05)#, validation_data=({'input': test_x}, {'targets': test_y}))
+            model.fit(X, Y, epochs=3, batch_size=4, validation_split=0.05, callbacks=[history])#, validation_data=({'input': test_x}, {'targets': test_y}))
+            keys = key_check()
+            if '#' in keys:
+                stop = True
 
-
-            if count%10 == 0:
+            if count%5 == 0:
                 print('SAVING MODEL!')
                 model.save(MODEL_NAME)
+        else:
+            while True:
+                keys = key_check()
+                if '#' in keys:
+                    break
+                time.sleep(0.5)
+                    
 model.save(MODEL_NAME)	 
+plt.plot(history.losses)
+plt.ylabel('Loss')
+plt.show()
         #except Exception as e:
            # print(str(e))
             
